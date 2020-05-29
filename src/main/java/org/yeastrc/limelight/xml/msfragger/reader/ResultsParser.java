@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ public class ResultsParser {
 			br.readLine();	// skip header
 
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
-				MSFraggerPSM psm = getMSFraggerPSMFromLine(line, params, params.getDecoyPrefix(), isOpenMod);
+				MSFraggerPSM psm = getMSFraggerPSMFromLine(line, params, isOpenMod);
 
 				MSFraggerReportedPeptide reportedPeptide = ReportedPeptideUtils.getReportedPeptideForPSM( psm );
 
@@ -69,12 +70,13 @@ public class ResultsParser {
 	 *
 	 * @param line
 	 * @param params
-	 * @param decoyPrefix
 	 * @param isOpenMod
 	 * @return
 	 * @throws Exception
 	 */
-	private static MSFraggerPSM getMSFraggerPSMFromLine(String line, MSFraggerParameters params, String decoyPrefix, boolean isOpenMod) throws Exception {
+	private static MSFraggerPSM getMSFraggerPSMFromLine(String line, MSFraggerParameters params, boolean isOpenMod) throws Exception {
+
+		String decoyPrefix = params.getDecoyPrefix();
 
 		String[] fields = line.split("\\t", -1);
 
@@ -95,17 +97,21 @@ public class ResultsParser {
 		BigDecimal hyperscoreWithDeltaMass = null;
 		BigDecimal nextHyperscoreWithDeltaMass = null;
 
-		if( fields[20].length() > 0 ) {
+		if( fields[20].length() > 0 )
 			hyperscoreNoDeltaMass = new BigDecimal(fields[20]);
-		}
+		else
+			hyperscoreNoDeltaMass = BigDecimal.ZERO;
 
-		if( fields[21].length() > 0) {
+
+		if( fields[21].length() > 0)
 			hyperscoreWithDeltaMass = new BigDecimal(fields[21]);
-		}
+		else
+			hyperscoreWithDeltaMass = BigDecimal.ZERO;
 
-		if( fields[22].length() > 0 ) {
+		if( fields[22].length() > 0 )
 			nextHyperscoreWithDeltaMass = new BigDecimal(fields[22]);
-		}
+		else
+			nextHyperscoreWithDeltaMass = BigDecimal.ZERO;
 
 		String proteinMatch = fields[8];
 		String altProteinMatches = null;
@@ -131,7 +137,7 @@ public class ResultsParser {
 		psm.setNextHyperScoreWithDeltaMass(nextHyperscoreWithDeltaMass);
 
 		// add in dynamic mods
-		psm.setModifications(getDynamicModsFromString(modString));
+		psm.setModifications(getDynamicModsFromString(modString, sequence, params));
 
 		// add in open mod and localizations
 		if(isOpenMod) {
@@ -193,12 +199,28 @@ public class ResultsParser {
 		return new OpenModification(massdiff, positions);
 	}
 
+	private static boolean isModStaticMod(String aminoAcid, BigDecimal modMass, MSFraggerParameters params ) {
+
+		if( params.getStaticMods() == null || params.getStaticMods().size() < 1 ) {
+			return false;
+		}
+
+		if( !params.getStaticMods().containsKey( aminoAcid.charAt( 0 ) ) ) {
+			return false;
+		}
+
+		// round to two decimal places and compare
+		BigDecimal testMass = modMass.setScale( 2, RoundingMode.HALF_UP );
+		BigDecimal paramMass = BigDecimal.valueOf( params.getStaticMods().get( aminoAcid.charAt( 0 ) ) ).setScale( 2, RoundingMode.HALF_UP );
+
+		return testMass.equals( paramMass );
+	}
 	/**
 	 * Example of string: "10C(57.02146), 17C(57.02146), 38C(57.02146)"
 	 * @param modString
 	 * @return
 	 */
-	private static Map<Integer, BigDecimal> getDynamicModsFromString(String modString) throws Exception {
+	private static Map<Integer, BigDecimal> getDynamicModsFromString(String modString, String peptide, MSFraggerParameters params) throws Exception {
 
 		Map<Integer, BigDecimal> modMap = new HashMap<>();
 
@@ -212,12 +234,30 @@ public class ResultsParser {
 			if(m.matches()) {
 
 				int position = Integer.parseInt(m.group(1));
+				String aminoAcid = String.valueOf( peptide.charAt( position - 1 ) );
 				BigDecimal mass = new BigDecimal(m.group(2));
 
-				modMap.put(position, mass);
+				if(!isModStaticMod(aminoAcid, mass, params))
+					modMap.put(position, mass);
 
 			} else {
-				throw new Exception("Did not understand reported modification: " + modChunk);
+
+				m = modTermPattern.matcher(modChunk);
+
+				if( m.matches()) {
+
+					int position = 0;
+					if(m.group(1).equals("C")) {
+						position = peptide.length();
+					}
+
+					BigDecimal mass = new BigDecimal(m.group(2));
+
+					modMap.put(position, mass);
+
+				} else {
+					throw new Exception("Did not understand reported modification: " + modChunk);
+				}
 			}
 		}
 
@@ -225,5 +265,6 @@ public class ResultsParser {
 	}
 
 	private static Pattern modPattern = Pattern.compile("^(\\d+)[A-Z]\\((.+)\\)$");
+	private static Pattern modTermPattern = Pattern.compile("^([NC])\\-term\\((.+)\\)$");
 
 }

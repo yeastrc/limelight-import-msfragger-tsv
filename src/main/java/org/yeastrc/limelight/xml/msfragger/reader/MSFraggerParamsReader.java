@@ -92,7 +92,6 @@ public class MSFraggerParamsReader {
 				if( m.matches() ) {
 					char residue = m.group( 1 ).charAt( 0 );
 					double d = Double.valueOf( m.group( 2 ) );
-
 					if( d >= 0.000001 )
 						staticMods.put( residue, d );
 				}

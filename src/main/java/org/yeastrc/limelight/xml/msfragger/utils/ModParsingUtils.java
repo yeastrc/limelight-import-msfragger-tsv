@@ -12,7 +12,11 @@ public class ModParsingUtils {
 			return nakedPeptideSequence;
 		
 		StringBuilder sb = new StringBuilder();
-		
+
+		if(modMap.containsKey(0)) {
+			sb.append("n[" + sb.append( modMap.get(0).setScale( 0, RoundingMode.HALF_UP ).toString() ) + "]");
+		}
+
 		for (int i = 0; i < nakedPeptideSequence.length(); i++){
 		    String r = String.valueOf( nakedPeptideSequence.charAt(i) );
 		    sb.append( r );
@@ -26,6 +30,10 @@ public class ModParsingUtils {
 		    	sb.append( "]" );
 		    	
 		    }
+		}
+
+		if(modMap.containsKey(nakedPeptideSequence.length())) {
+			sb.append("c[" + sb.append( modMap.get(nakedPeptideSequence.length()).setScale( 0, RoundingMode.HALF_UP ).toString() ) + "]");
 		}
 				
 		return sb.toString();

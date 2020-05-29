@@ -144,7 +144,16 @@ public class XMLBuilder {
 					xmlModifications.getPeptideModification().add( xmlModification );
 
 					xmlModification.setMass( msFraggerReportedPeptide.getMods().get( position ).stripTrailingZeros().setScale( 0, RoundingMode.HALF_UP ) );
-					xmlModification.setPosition( BigInteger.valueOf( position ) );
+
+					if(position == 0)
+						xmlModification.setIsNTerminal(true);
+
+					else if(position == msFraggerReportedPeptide.getNakedPeptide().length())
+						xmlModification.setIsCTerminal(true);
+
+					else
+						xmlModification.setPosition( new BigInteger( String.valueOf( position ) ) );
+
 				}
 			}
 
@@ -272,21 +281,6 @@ public class XMLBuilder {
 					xmlFilterablePsmAnnotation.setAnnotationName( PSMAnnotationTypes.MSFRAGGER_ANNOTATION_TYPE_DELTASCORE_WITH_DELTA );
 					xmlFilterablePsmAnnotation.setSearchProgram( Constants.PROGRAM_NAME_MSFRAGGER );
 					xmlFilterablePsmAnnotation.setValue( psm.getHyperScoreWithDeltaMass().subtract(psm.getNextHyperScoreWithDeltaMass()) );
-				}
-
-				// add in the mods for this psm
-				if( psm.getModifications() != null && psm.getModifications().keySet().size() > 0 ) {
-
-					PsmModifications xmlPSMModifications = new PsmModifications();
-					xmlPsm.setPsmModifications( xmlPSMModifications );
-
-					for( int position : psm.getModifications().keySet() ) {
-						PsmModification xmlPSMModification = new PsmModification();
-						xmlPSMModifications.getPsmModification().add( xmlPSMModification );
-
-						xmlPSMModification.setMass( psm.getModifications().get( position ) );
-						xmlPSMModification.setPosition( new BigInteger( String.valueOf( position ) ) );
-					}
 				}
 
 				// add in the open mod mass if this is an open mod search
