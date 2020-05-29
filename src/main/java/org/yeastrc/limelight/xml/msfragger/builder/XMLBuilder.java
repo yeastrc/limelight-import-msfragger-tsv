@@ -143,7 +143,7 @@ public class XMLBuilder {
 					PeptideModification xmlModification = new PeptideModification();
 					xmlModifications.getPeptideModification().add( xmlModification );
 
-					xmlModification.setMass( msFraggerReportedPeptide.getMods().get( position ).stripTrailingZeros().setScale( 0, RoundingMode.HALF_UP ) );
+					xmlModification.setMass( msFraggerReportedPeptide.getMods().get( position ).stripTrailingZeros().setScale( 4, RoundingMode.HALF_UP ) );
 
 					if(position == 0)
 						xmlModification.setIsNTerminal(true);
