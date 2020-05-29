@@ -76,7 +76,7 @@ public class ResultsParser {
 	 */
 	private static MSFraggerPSM getMSFraggerPSMFromLine(String line, MSFraggerParameters params, String decoyPrefix, boolean isOpenMod) throws Exception {
 
-		String[] fields = line.split("\\t");
+		String[] fields = line.split("\\t", -1);
 
 		int scanNumber = Integer.parseInt(fields[0]);
 		int charge = Integer.parseInt(fields[3]);
@@ -90,9 +90,22 @@ public class ResultsParser {
 		BigDecimal nextHyperscore = new BigDecimal(fields[17]);
 		BigDecimal expectScore = new BigDecimal(fields[18]);
 		String localizedOpenMod = fields[19];
-		BigDecimal hyperscoreNoDeltaMass = new BigDecimal(fields[20]);
-		BigDecimal hyperscoreWithDeltaMass = new BigDecimal(fields[21]);
-		BigDecimal nextHyperscoreWithDeltaMass = new BigDecimal(fields[22]);
+
+		BigDecimal hyperscoreNoDeltaMass = null;
+		BigDecimal hyperscoreWithDeltaMass = null;
+		BigDecimal nextHyperscoreWithDeltaMass = null;
+
+		if( fields[20].length() > 0 ) {
+			hyperscoreNoDeltaMass = new BigDecimal(fields[20]);
+		}
+
+		if( fields[21].length() > 0) {
+			hyperscoreWithDeltaMass = new BigDecimal(fields[21]);
+		}
+
+		if( fields[22].length() > 0 ) {
+			nextHyperscoreWithDeltaMass = new BigDecimal(fields[22]);
+		}
 
 		String proteinMatch = fields[8];
 		String altProteinMatches = null;
