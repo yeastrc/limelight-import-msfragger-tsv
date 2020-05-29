@@ -14,7 +14,7 @@ public class ModParsingUtils {
 		StringBuilder sb = new StringBuilder();
 
 		if(modMap.containsKey(0)) {
-			sb.append("n[" + sb.append( modMap.get(0).setScale( 0, RoundingMode.HALF_UP ).toString() ) + "]");
+			sb.append("n[" + modMap.get(0).setScale( 0, RoundingMode.HALF_UP ).toString() + "]");
 		}
 
 		for (int i = 0; i < nakedPeptideSequence.length(); i++){
