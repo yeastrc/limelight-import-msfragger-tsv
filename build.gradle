@@ -1,0 +1,51 @@
+/*
+    Build executable jar file with gradle shadowJar
+    More info at: https://imperceptiblethoughts.com/shadow/
+    
+    Requires Gradle 5+
+ */
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '5.0.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url 'https://raw.github.com/yeastrc/java-fasta-utils/repository/'
+    }
+    maven {
+        url 'https://raw.github.com/yeastrc/limelight-import-api/repository/'
+    }
+}
+
+dependencies {
+    compile 'org.yeastrc:yrc-fasta-utils:2.0.2'
+    compile 'org.yeastrc:limelight-import-api:0.11.0'
+    compile 'info.picocli:picocli:4.0.0-alpha-1'
+}
+
+processResources {
+    from ('src/main/java') {
+        include '**/*.txt'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.yeastrc.limelight.xml.msfragger.main.MainProgram'
+    }
+}
+
+shadowJar {
+    baseName = 'msFragger2LimelightXML'
+    classifier = null
+    version = null
+}
