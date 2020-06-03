@@ -47,6 +47,10 @@ public class ConverterRunner {
 		System.err.print( "Writing out XML..." );
 		(new XMLBuilder()).buildAndSaveXML( conversionParameters, msFraggerResults, msfraggerParams, tdAnalysis );
 		System.err.println( " Done." );
+
+		System.err.print( "Validating Limelight XML..." );
+		LimelightXMLValidator.validateLimelightXML(conversionParameters.getLimelightXMLOutputFile());
+		System.err.println( " Done." );
 		
 	}
 }
