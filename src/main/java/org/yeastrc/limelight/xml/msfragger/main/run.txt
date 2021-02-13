@@ -1,4 +1,4 @@
-MSFragger/TPP to limelight XML converter
+MSFragger/TSV to limelight XML converter
 Author: Michael Riffle <mriffle@uw.edu>
 See: {{URL}}
 Version: {{VERSION}}
