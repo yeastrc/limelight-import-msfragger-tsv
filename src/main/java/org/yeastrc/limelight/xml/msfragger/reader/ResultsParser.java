@@ -81,6 +81,8 @@ public class ResultsParser {
 		String[] fields = line.split("\\t", -1);
 
 		int scanNumber = Integer.parseInt(fields[0]);
+		BigDecimal precursorNeutralMass = new BigDecimal(fields[1]);
+		BigDecimal retentionTime = BigDecimal.valueOf(Double.parseDouble(fields[2] ) * 60);	// rt is reported as minutes, we want seconds
 		int charge = Integer.parseInt(fields[3]);
 		int rank = Integer.parseInt(fields[4]);
 		String sequence = fields[5];
@@ -123,6 +125,8 @@ public class ResultsParser {
 
 		// populate the fields that require no extra processing
 		psm.setScanNumber(scanNumber);
+		psm.setPrecursorNeutralMass(precursorNeutralMass);
+		psm.setRetentionTime(retentionTime);
 		psm.setCharge(charge);
 		psm.setHitRank(rank);
 		psm.setPeptideSequence(sequence);
