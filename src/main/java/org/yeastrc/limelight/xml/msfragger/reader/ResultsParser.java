@@ -39,6 +39,27 @@ import java.util.regex.Pattern;
  */
 public class ResultsParser {
 
+	private static final String[] REQUIRED_HEADERS = {
+			"scannum",
+			"precursor_neutral_mass",
+			"retention_time",
+			"charge",
+			"hit_rank",
+			"peptide",
+			"num_matched_ions",
+			"tot_num_ions",
+			"massdiff",
+			"modification_info",
+			"hyperscore",
+			"nextscore",
+			"expectscore",
+			"best_locs",
+			"score_without_delta_mass",
+			"best_score_with_delta_mass",
+			"second_best_score_with_delta_mass",
+			"proteins"
+	};
+
 	public static MSFraggerResults getResults(File msFraggerTSVFile, MSFraggerParameters params, boolean isOpenMod ) throws Throwable {
 
 
@@ -48,10 +69,12 @@ public class ResultsParser {
 
 		try(BufferedReader br = new BufferedReader(new FileReader( msFraggerTSVFile ))) {
 
-			br.readLine();	// skip header
+			String headerLine = br.readLine();
+			Map<String, Integer> columnMap = getColumnMap(headerLine);
+			validateRequiredHeaders(columnMap);
 
 			for(String line = br.readLine(); line != null; line = br.readLine()) {
-				MSFraggerPSM psm = getMSFraggerPSMFromLine(line, params, isOpenMod);
+				MSFraggerPSM psm = getMSFraggerPSMFromLine(line, params, isOpenMod, columnMap);
 
 				MSFraggerReportedPeptide reportedPeptide = ReportedPeptideUtils.getReportedPeptideForPSM( psm );
 
@@ -65,60 +88,78 @@ public class ResultsParser {
 		return results;
 	}
 
+	private static void validateRequiredHeaders(Map<String, Integer> columnMap) throws Exception {
+		for (String requiredHeader : REQUIRED_HEADERS) {
+			if (!columnMap.containsKey(requiredHeader)) {
+				throw new Exception("Required column not found in TSV file: " + requiredHeader);
+			}
+		}
+	}
+
+	private static Map<String, Integer> getColumnMap(String headerLine) {
+		Map<String, Integer> columnMap = new HashMap<>();
+		String[] headers = headerLine.split("\\t");
+		for (int i = 0; i < headers.length; i++) {
+			columnMap.put(headers[i], i);
+		}
+		return columnMap;
+	}
+
 	/**
 	 * Get a PSM object for a given line in MSFragger TSV output
 	 *
 	 * @param line
 	 * @param params
 	 * @param isOpenMod
+	 * @param columnMap
 	 * @return
 	 * @throws Exception
 	 */
-	private static MSFraggerPSM getMSFraggerPSMFromLine(String line, MSFraggerParameters params, boolean isOpenMod) throws Exception {
+	private static MSFraggerPSM getMSFraggerPSMFromLine(String line, MSFraggerParameters params, boolean isOpenMod, Map<String, Integer> columnMap) throws Exception {
 
 		String decoyPrefix = params.getDecoyPrefix();
 
 		String[] fields = line.split("\\t", -1);
 
-		int scanNumber = Integer.parseInt(fields[0]);
-		BigDecimal precursorNeutralMass = new BigDecimal(fields[1]);
-		BigDecimal retentionTime = BigDecimal.valueOf(Double.parseDouble(fields[2] ) * 60);	// rt is reported as minutes, we want seconds
-		int charge = Integer.parseInt(fields[3]);
-		int rank = Integer.parseInt(fields[4]);
-		String sequence = fields[5];
-		int matchedFragmentIons = Integer.parseInt(fields[9]);
-		int totalFragmentIons = Integer.parseInt(fields[10]);
-		BigDecimal massDiff = new BigDecimal(fields[12]);
-		String modString = fields[15];
-		BigDecimal hyperscore = new BigDecimal(fields[16]);
-		BigDecimal nextHyperscore = new BigDecimal(fields[17]);
-		BigDecimal expectScore = new BigDecimal(fields[18]);
-		String localizedOpenMod = fields[19];
+		int scanNumber = Integer.parseInt(fields[columnMap.get("scannum")]);
+		BigDecimal precursorNeutralMass = new BigDecimal(fields[columnMap.get("precursor_neutral_mass")]);
+		BigDecimal retentionTime = BigDecimal.valueOf(Double.parseDouble(fields[columnMap.get("retention_time")] ) * 60);	// rt is reported as minutes, we want seconds
+		int charge = Integer.parseInt(fields[columnMap.get("charge")]);
+		int rank = Integer.parseInt(fields[columnMap.get("hit_rank")]);
+		String sequence = fields[columnMap.get("peptide")];
+		int matchedFragmentIons = Integer.parseInt(fields[columnMap.get("num_matched_ions")]);
+		int totalFragmentIons = Integer.parseInt(fields[columnMap.get("tot_num_ions")]);
+		BigDecimal massDiff = new BigDecimal(fields[columnMap.get("massdiff")]);
+		String modString = fields[columnMap.get("modification_info")];
+		BigDecimal hyperscore = new BigDecimal(fields[columnMap.get("hyperscore")]);
+		BigDecimal nextHyperscore = new BigDecimal(fields[columnMap.get("nextscore")]);
+		BigDecimal expectScore = new BigDecimal(fields[columnMap.get("expectscore")]);
+		String localizedOpenMod = fields[columnMap.get("best_locs")];
 
 		BigDecimal hyperscoreNoDeltaMass = null;
 		BigDecimal hyperscoreWithDeltaMass = null;
 		BigDecimal nextHyperscoreWithDeltaMass = null;
 
-		if( fields[20].length() > 0 )
-			hyperscoreNoDeltaMass = new BigDecimal(fields[20]);
+		if( fields[columnMap.get("score_without_delta_mass")].length() > 0 )
+			hyperscoreNoDeltaMass = new BigDecimal(fields[columnMap.get("score_without_delta_mass")]);
 		else
 			hyperscoreNoDeltaMass = BigDecimal.ZERO;
 
 
-		if( fields[21].length() > 0)
-			hyperscoreWithDeltaMass = new BigDecimal(fields[21]);
+		if( fields[columnMap.get("best_score_with_delta_mass")].length() > 0)
+			hyperscoreWithDeltaMass = new BigDecimal(fields[columnMap.get("best_score_with_delta_mass")]);
 		else
 			hyperscoreWithDeltaMass = BigDecimal.ZERO;
 
-		if( fields[22].length() > 0 )
-			nextHyperscoreWithDeltaMass = new BigDecimal(fields[22]);
+		if( fields[columnMap.get("second_best_score_with_delta_mass")].length() > 0 )
+			nextHyperscoreWithDeltaMass = new BigDecimal(fields[columnMap.get("second_best_score_with_delta_mass")]);
 		else
 			nextHyperscoreWithDeltaMass = BigDecimal.ZERO;
 
-		String proteinMatch = fields[8];
+		String proteinMatch = fields[columnMap.get("proteins")];
 		String altProteinMatches = null;
-		if(fields.length == 25) {
-			altProteinMatches = fields[24];
+		if(columnMap.containsKey("alt_protein_matches")) {
+			altProteinMatches = fields[columnMap.get("alt_protein_matches")];
 		}
 
 		MSFraggerPSM psm = new MSFraggerPSM();
