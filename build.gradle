@@ -28,7 +28,9 @@ repositories {
 }
 
 //  Set default task for this build.gradle file
-defaultTasks 
+defaultTasks 'shadowJar'
+
+
 dependencies {
     implementation 'org.yeastrc:yrc-fasta-utils:2.0.2'
     implementation 'org.yeastrc:limelight-import-api:0.11.0'
